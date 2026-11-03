@@ -10,13 +10,12 @@
           --accent-glow: rgba(56, 189, 248, 0.35);
           --board-light: #e0f2fe;
           --board-dark: #0284c7;
-          --piece-white: #f8fafc;
-          --piece-black: #0f172a;
+          --piece-white: #ffffff;
+          --piece-black: #050505;
         }
 
         .container { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 600px; width: 100%; padding: 20px; position: relative; }
         
-        /* Pill UI Header & Status */
         .pill-bar {
           background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.3);
           padding: 14px 28px; border-radius: 9999px; font-weight: 800; font-size: 1rem; text-align: center; width: 100%;
@@ -38,10 +37,11 @@
           overflow: hidden; background: #0f172a;
         }
         .square {
-          display: flex; align-items: center; justify-content: center; font-size: 2.8rem; cursor: pointer; position: relative; transition: background 0.15s;
+          display: flex; align-items: center; justify-content: center; font-size: 2.8rem; font-weight: bold; cursor: pointer; position: relative; transition: background 0.15s;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
-        .square.light { background: var(--board-light); color: var(--piece-white); }
-        .square.dark { background: var(--board-dark); color: var(--piece-black); }
+        .square.light { background: var(--board-light); }
+        .square.dark { background: var(--board-dark); }
         .square.selected { background: rgba(56, 189, 248, 0.75) !important; box-shadow: inset 0 0 15px rgba(255,255,255,0.6); }
 
         .liquid-pill-btn {
@@ -52,7 +52,6 @@
         }
         .liquid-pill-btn:hover { background: var(--accent-color); color: #0f172a; border-color: var(--accent-color); transform: translateY(-2px); }
 
-        /* Modal Overlay */
         .modal-overlay {
           position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
           background: rgba(0, 0, 0, 0.8); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px);
@@ -67,10 +66,8 @@
         ]]>
       </style>
 
-      <!-- Top Right Settings Button -->
       <div class="top-right-settings" onclick="openSettings()" title="Settings">⚙️</div>
 
-      <!-- Settings Modal -->
       <div class="modal-overlay" id="settingsModal">
         <div class="modal-card">
           <h3 style="margin:0; color:var(--accent-color); text-align:center;">unblocked chess settings</h3>
@@ -97,11 +94,11 @@
           <div style="display:flex; gap:10px;">
             <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
               <span style="font-size:0.8rem; color:#94a3b8;">Light Pieces:</span>
-              <input type="color" id="lightPieceColor" class="color-input" value="#f8fafc" onchange="updatePieceColors()" style="height:40px;" />
+              <input type="color" id="lightPieceColor" class="color-input" value="#ffffff" onchange="updatePieceColors()" style="height:40px;" />
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
               <span style="font-size:0.8rem; color:#94a3b8;">Dark Pieces:</span>
-              <input type="color" id="darkPieceColor" class="color-input" value="#0f172a" onchange="updatePieceColors()" style="height:40px;" />
+              <input type="color" id="darkPieceColor" class="color-input" value="#050505" onchange="updatePieceColors()" style="height:40px;" />
             </div>
           </div>
 
@@ -124,7 +121,6 @@
 
       <script type="text/javascript">
         <![CDATA[
-        // Set Google Docs Cloaked Title and Favicon
         document.title = "Untitled document - Google Docs";
         let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
         link.type = 'image/x-icon';
@@ -133,9 +129,17 @@
         document.getElementsByTagName('head')[0].appendChild(link);
 
         const unicodePieces = {
-          'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙',
+          'R': '♜', 'N': '♞', 'B': '♝', 'Q': '♛', 'K': '♚', 'P': '♟',
           'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
           '.': ''
+        };
+        
+        // Use standard filled/clear representations for absolute compatibility
+        const whitePiecesSymbol = {
+          'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+        };
+        const blackPiecesSymbol = {
+          'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟'
         };
 
         let board = [
@@ -185,6 +189,7 @@
           const darkColor = document.getElementById('darkPieceColor').value;
           document.documentElement.style.setProperty('--piece-white', lightColor);
           document.documentElement.style.setProperty('--piece-black', darkColor);
+          renderBoard();
         }
 
         function renderBoard() {
@@ -197,8 +202,9 @@
               
               const piece = board[r][c];
               if (piece !== '.') {
-                square.textContent = unicodePieces[piece];
-                square.style.color = (piece === piece.toUpperCase()) ? 'var(--piece-white)' : 'var(--piece-black)';
+                const isWhite = (piece === piece.toUpperCase());
+                square.textContent = isWhite ? whitePiecesSymbol[piece] : blackPiecesSymbol[piece];
+                square.style.color = isWhite ? getComputedStyle(document.documentElement).getPropertyValue('--piece-white') : getComputedStyle(document.documentElement).getPropertyValue('--piece-black');
               }
 
               if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
