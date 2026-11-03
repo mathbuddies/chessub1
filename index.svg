@@ -1,0 +1,285 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <foreignObject width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml" id="appRoot" style="width: 100vw; height: 100vh; margin: 0; padding: 0; background: #070a12; font-family: system-ui, -apple-system, sans-serif; color: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; user-select: none;">
+      
+      <style type="text/css">
+        <![CDATA[
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        :root { 
+          --accent-color: #38bdf8; 
+          --accent-glow: rgba(56, 189, 248, 0.25);
+          --board-light: #e0f2fe;
+          --board-dark: #0284c7;
+        }
+
+        .container { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 500px; width: 100%; padding: 20px; position: relative; }
+        
+        /* Pill UI Header & Status */
+        .pill-bar {
+          background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);
+          padding: 12px 24px; border-radius: 9999px; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%;
+          display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+          backdrop-filter: blur(8px);
+        }
+
+        .top-right-settings {
+          position: absolute; top: 20px; right: 20px;
+          background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #f8fafc; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+          cursor: pointer; font-size: 1.2rem; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); backdrop-filter: blur(8px);
+        }
+        .top-right-settings:hover { background: var(--accent-color); color: #0f172a; border-color: var(--accent-color); }
+
+        .chessboard {
+          display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+          width: 380px; height: 380px; border: 4px solid #1e293b; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+          overflow: hidden;
+        }
+        .square {
+          display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; position: relative;
+        }
+        .square.light { background: var(--board-light); color: #0f172a; }
+        .square.dark { background: var(--board-dark); color: #f8fafc; }
+        .square.selected { background: rgba(56, 189, 248, 0.7) !important; }
+
+        .liquid-pill-btn {
+          background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #f8fafc; padding: 10px 24px; border-radius: 9999px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+          display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; text-decoration: none;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3); backdrop-filter: blur(8px);
+        }
+        .liquid-pill-btn:hover { background: var(--accent-color); color: #0f172a; border-color: var(--accent-color); }
+
+        /* Modal Overlay */
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+          background: rgba(0, 0, 0, 0.75); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+          background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 24px; padding: 24px; width: 90%; max-width: 360px; display: flex; flex-direction: column; gap: 16px;
+          box-shadow: 0 15px 35px rgba(0,0,0,0.6); text-align: center;
+        }
+        .select-box { background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255, 255, 255, 0.15); color: #f8fafc; padding: 12px; border-radius: 12px; font-weight: bold; outline: none; cursor: pointer; width: 100%; text-align: center; }
+        ]]>
+      </style>
+
+      <!-- Top Right Settings Button -->
+      <div class="top-right-settings" onclick="openSettings()" title="Settings">⚙️</div>
+
+      <!-- Settings Modal -->
+      <div class="modal-overlay" id="settingsModal">
+        <div class="modal-card">
+          <h3 style="margin:0; color:var(--accent-color);">match settings</h3>
+          <div style="display:flex; flex-direction:column; gap:8px; text-align:left;">
+            <span style="font-size:0.85rem; color:#94a3b8;">AI Difficulty:</span>
+            <select class="select-box" id="aiDifficultySelect" onchange="updateDifficulty()">
+              <option value="easy">Easy (Random)</option>
+              <option value="medium" selected="selected">Medium (Smart Captures)</option>
+              <option value="hard">Hard (Advanced)</option>
+            </select>
+          </div>
+          <button onclick="closeSettings()" class="liquid-pill-btn" style="background:var(--accent-color); color:#0f172a; margin-top:8px;">save and close</button>
+        </div>
+      </div>
+
+      <div class="container">
+        <div style="text-align:center;">
+          <h1 style="font-size:1.8rem; font-weight:900; color:var(--accent-color); margin:0;">unblocked chess</h1>
+          <div style="font-size:0.75rem; color:#94a3b8; font-family:monospace; margin-top:2px;">mathbuddies/chessub1 • index.svg</div>
+        </div>
+
+        <div class="pill-bar">
+          <span id="statusDisplay">White's turn (You)</span>
+          <span id="difficultyBadge" style="font-size:0.75rem; color:var(--accent-color); background:rgba(56,189,248,0.15); padding:4px 8px; border-radius:999px;">Medium AI</span>
+        </div>
+
+        <div class="chessboard" id="chessboard"></div>
+
+        <div style="display:flex; gap:10px; width:100%;">
+          <button class="liquid-pill-btn" style="flex:1;" onclick="resetMatch()">restart match</button>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        <![CDATA[
+        const unicodePieces = {
+          'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙',
+          'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+          '.': ''
+        };
+
+        let board = [
+          ['r','n','b','q','k','b','n','r'],
+          ['p','p','p','p','p','p','p','p'],
+          ['.','.','.','.','.','.','.','.'],
+          ['.','.','.','.','.','.','.','.'],
+          ['.','.','.','.','.','.','.','.'],
+          ['.','.','.','.','.','.','.','.'],
+          ['P','P','P','P','P','P','P','P'],
+          ['R','N','B','Q','K','B','N','R']
+        ];
+
+        let turn = 'w';
+        let selectedSquare = null;
+        let gameOver = false;
+        let aiDifficulty = 'medium';
+
+        function openSettings() {
+          document.getElementById('settingsModal').classList.add('open');
+        }
+
+        function closeSettings() {
+          document.getElementById('settingsModal').classList.remove('open');
+        }
+
+        function updateDifficulty() {
+          aiDifficulty = document.getElementById('aiDifficultySelect').value;
+          document.getElementById('difficultyBadge').textContent = (aiDifficulty === 'easy' ? 'Easy AI' : aiDifficulty === 'medium' ? 'Medium AI' : 'Hard AI');
+        }
+
+        function renderBoard() {
+          const container = document.getElementById('chessboard');
+          container.innerHTML = '';
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              const square = document.createElement('div');
+              square.className = 'square ' + ((r + c) % 2 === 0 ? 'light' : 'dark');
+              
+              const piece = board[r][c];
+              if (piece !== '.') {
+                square.textContent = unicodePieces[piece];
+              }
+
+              if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
+                square.classList.add('selected');
+              }
+
+              square.onclick = () => handleSquareClick(r, c);
+              container.appendChild(square);
+            }
+          }
+        }
+
+        function handleSquareClick(r, c) {
+          if (gameOver || turn !== 'w') return;
+
+          const piece = board[r][c];
+          if (selectedSquare) {
+            if (selectedSquare.r === r && selectedSquare.c === c) {
+              selectedSquare = null;
+            } else if (piece !== '.' && piece === piece.toUpperCase()) {
+              selectedSquare = { r, c };
+            } else {
+              executeMove(selectedSquare.r, selectedSquare.c, r, c);
+              selectedSquare = null;
+            }
+          } else {
+            if (piece !== '.' && piece === piece.toUpperCase()) {
+              selectedSquare = { r, c };
+            }
+          }
+          renderBoard();
+        }
+
+        function executeMove(sr, sc, tr, tc) {
+          board[tr][tc] = board[sr][sc];
+          board[sr][sc] = '.';
+          turn = 'b';
+          document.getElementById('statusDisplay').textContent = "AI's turn...";
+          
+          checkGameState();
+          if (!gameOver) {
+            setTimeout(makeAiMove, 500);
+          }
+        }
+
+        function makeAiMove() {
+          if (gameOver) return;
+          let blackMoves = [];
+          
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              if (board[r][c] !== '.' && board[r][c] === board[r][c].toLowerCase()) {
+                for (let dr = -2; dr <= 2; dr++) {
+                  for (let dc = -2; dc <= 2; dc++) {
+                    let tr = r + dr, tc = c + dc;
+                    if (tr >= 0 && tr < 8 && tc >= 0 && tc < 8) {
+                      let target = board[tr][tc];
+                      if (target === '.' || target === target.toUpperCase()) {
+                        blackMoves.push({ sr: r, sc: c, tr: tr, tc: tc, capture: target !== '.' });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (blackMoves.length > 0) {
+            let selectedMove = blackMoves[0];
+            
+            if (aiDifficulty === 'medium' || aiDifficulty === 'hard') {
+              let captureMoves = blackMoves.filter(m => m.capture);
+              if (captureMoves.length > 0) {
+                selectedMove = captureMoves[Math.floor(Math.random() * captureMoves.length)];
+              } else {
+                selectedMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+              }
+            } else {
+              selectedMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+            }
+
+            board[selectedMove.tr][selectedMove.tc] = board[selectedMove.sr][selectedMove.sc];
+            board[selectedMove.sr][selectedMove.sc] = '.';
+          }
+
+          turn = 'w';
+          document.getElementById('statusDisplay').textContent = "White's turn (You)";
+          checkGameState();
+          renderBoard();
+        }
+
+        function checkGameState() {
+          let whiteKing = false, blackKing = false;
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              if (board[r][c] === 'K') whiteKing = true;
+              if (board[r][c] === 'k') blackKing = true;
+            }
+          }
+          if (!whiteKing) {
+            gameOver = true;
+            document.getElementById('statusDisplay').textContent = "AI wins the match!";
+          } else if (!blackKing) {
+            gameOver = true;
+            document.getElementById('statusDisplay').textContent = "You win the match!";
+          }
+        }
+
+        window.resetMatch = function() {
+          board = [
+            ['r','n','b','q','k','b','n','r'],
+            ['p','p','p','p','p','p','p','p'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['P','P','P','P','P','P','P','P'],
+            ['R','N','B','Q','K','B','N','R']
+          ];
+          turn = 'w';
+          selectedSquare = null;
+          gameOver = false;
+          document.getElementById('statusDisplay').textContent = "White's turn (You)";
+          renderBoard();
+        };
+
+        renderBoard();
+        ]]>
+      </script>
+
+    </div>
+  </foreignObject>
+</svg>
